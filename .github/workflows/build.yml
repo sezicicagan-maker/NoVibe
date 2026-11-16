@@ -3,12 +3,11 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/theos/theos:latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Tweak
-        run: make package FINALPACKAGE=1
+      - uses: theos/theos-action@v1
+        with:
+          args: make package FINALPACKAGE=1
       - name: Extract Dylib
         run: |
           mkdir -p out

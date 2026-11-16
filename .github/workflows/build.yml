@@ -5,9 +5,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: theos/theos-action@master
-      - name: Extract Dylib
+      - name: Setup and Build
         run: |
+          sudo apt-get update && sudo apt-get install -y fakeroot git perl clang lld
+          git clone --recursive https://github.com ~/theos
+          mkdir -p ~/theos/sdks
+          curl -sL https://github.com | tar -xz -C ~/theos/sdks --strip-components=1
+          export THEOS=~/theos
+          make package FINALPACKAGE=1
           mkdir -p out
           dpkg-deb -x packages/*.deb extracted
           find extracted -name "NoVibe.dylib" -exec cp {} out/ \;

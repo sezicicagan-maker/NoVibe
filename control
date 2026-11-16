@@ -1,0 +1,10 @@
+Package: com.custom.novibe
+Name: NoVibe
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Disable vibration inside app
+Maintainer: User
+Author: User
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000)
+

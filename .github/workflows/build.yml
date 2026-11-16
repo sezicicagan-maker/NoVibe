@@ -5,17 +5,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup and Build
+      - name: Compile Dylib
         run: |
-          sudo apt-get update && sudo apt-get install -y fakeroot git perl clang lld
-          git clone --recursive https://github.com ~/theos
-          mkdir -p ~/theos/sdks
-          curl -sL https://github.com | tar -xz -C ~/theos/sdks --strip-components=1
-          export THEOS=~/theos
-          make package FINALPACKAGE=1
           mkdir -p out
-          dpkg-deb -x packages/*.deb extracted
-          find extracted -name "NoVibe.dylib" -exec cp {} out/ \;
+          cat << 'EOF' > novibe.c
+          #include <stdint.h>
+          #include <stdbool.h>
+          #include <objc/runtime.h>
+          #include <objc/message.h>
+
+          void empty_void(id self, SEL _cmd) {}
+          void empty_float(id self, SEL _cmd, double val) {}
+          void empty_int(id self, SEL _cmd, long val) {}
+
+          __attribute__((constructor))
+          static void init(void) {
+              Class c1 = objc_getClass("UIImpactFeedbackGenerator");
+              if (c1) {
+                  class_replaceMethod(c1, sel_registerName("impactOccurred"), (IMP)empty_void, "v@:");
+                  class_replaceMethod(c1, sel_registerName("impactOccurredWithIntensity:"), (IMP)empty_float, "v@:d");
+              }
+              Class c2 = objc_getClass("UINotificationFeedbackGenerator");
+              if (c2) {
+                  class_replaceMethod(c2, sel_registerName("notificationOccurred:"), (IMP)empty_int, "v@:q");
+              }
+              Class c3 = objc_getClass("UISelectionFeedbackGenerator");
+              if (c3) {
+                  class_replaceMethod(c3, sel_registerName("selectionChanged"), (IMP)empty_void, "v@:");
+              }
+          }
+          EOF
+          sudo apt-get update && sudo apt-get install -y clang lld
+          clang -target arm64-apple-ios15.0 -shared -fPIC novibe.c -o out/NoVibe.dylib -Wl,-undefined,dynamic_lookup
       - uses: actions/upload-artifact@v4
         with:
           name: NoVibe-dylib

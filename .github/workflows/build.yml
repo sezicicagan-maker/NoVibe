@@ -1,0 +1,20 @@
+name: Build NoVibe
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/theos/theos:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Tweak
+        run: make package FINALPACKAGE=1
+      - name: Extract Dylib
+        run: |
+          mkdir -p out
+          dpkg-deb -x packages/*.deb extracted
+          find extracted -name "NoVibe.dylib" -exec cp {} out/ \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NoVibe-dylib
+          path: out/NoVibe.dylib
